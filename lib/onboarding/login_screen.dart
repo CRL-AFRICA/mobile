@@ -7,6 +7,7 @@ import '../utils/toast.dart';
 import '../widgets/custom_password_text_field.dart';
 import 'register_screen.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:local_auth/local_auth.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,6 +19,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController passwordController = TextEditingController();
+  final LocalAuthentication auth = LocalAuthentication(); // Biometrics auth
 
   String? userEmail;
   String? firstName;
@@ -31,8 +33,39 @@ class _LoginScreenState extends State<LoginScreen> {
     super.initState();
     _loadUserEmail();
     _startTimer();
+    _checkBiometricsSupport(); 
+  }
+// Check if biometric authentication is available and device supports it
+  Future<void> _checkBiometricsSupport() async {
+    final bool canAuthenticateWithBiometrics = await auth.canCheckBiometrics;
+    final bool canAuthenticate = canAuthenticateWithBiometrics || await auth.isDeviceSupported();
+
+    if (canAuthenticate) {
+      // If biometrics are supported, show the fingerprint icon
+      showToast("Biometric authentication is available.");
+    } else {
+      showToast("Biometric authentication is not available.");
+    }
   }
 
+  // Perform biometric authentication
+  Future<void> _authenticateWithBiometrics() async {
+    try {
+      final isAuthenticated = await auth.authenticate(
+        localizedReason: 'Please authenticate to log in',
+        options: const AuthenticationOptions(biometricOnly: true),
+      );
+
+      if (isAuthenticated) {
+        // Perform your login actions here, assuming authentication succeeded
+        loginUser();
+      } else {
+        showToast("Authentication failed.", isError: true);
+      }
+    } catch (e) {
+      showToast("Error occurred during biometric authentication.", isError: true);
+    }
+  }
     Future<void> _loadUserEmail() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -152,8 +185,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
           const SizedBox(height: 20),
 
-          // 🔹 Larger Fingerprint Image
-          Center(child: Image.asset("images/fingerprint.png", height: 180)),
+           // 🔹 Fingerprint Image with Biometric Authentication
+          Center(
+            child: GestureDetector(
+              onTap: _authenticateWithBiometrics, // Tap to authenticate with biometrics
+              child: Image.asset("images/fingerprint.png", height: 180),
+            ),
+          ),
           const SizedBox(height: 70),
 
           // 🔹 Password Field

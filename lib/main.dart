@@ -29,7 +29,7 @@ class _MyAppState extends State<MyApp> {
     String? userEmail = prefs.getString('userEmail');
 
     setState(() {
-      _initialScreen = (userEmail != null && userEmail.isNotEmpty)
+      _initialScreen = (userEmail!.isNotEmpty)
           ? const LoginScreen()
           : const LogoLoadingScreen();
     });

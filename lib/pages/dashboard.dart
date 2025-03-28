@@ -39,8 +39,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('accessToken');
 
-    if (token == null) return;
-
     try {
       final response = await _dio.get(
         'customer/VirtualAccount/Balance', // Base URL is already set in Dio options
