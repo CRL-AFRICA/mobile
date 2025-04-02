@@ -34,8 +34,55 @@ class _DetailsFormScreenState extends State<DetailsFormScreen> {
     headers: {'Content-Type': 'application/json'},
   ));
 
- Future<void> onboardUser() async {
+Future<String?> uploadProfilePicture(File imageFile) async {
+  const String uploadUrl = "customer/User/UploadProfilePicture";
+
+  try {
+    FormData formData = FormData.fromMap({
+      "file": await MultipartFile.fromFile(imageFile.path, filename: "profile.jpg"),
+    });
+
+    final response = await dio.post(uploadUrl, data: formData);
+
+    if (response.statusCode == 200 && response.data != null) {
+      return response.data["imageUrl"]; // Assuming API returns { "imageUrl": "https://example.com/image.jpg" }
+    } else {
+      showToast("Failed to upload profile picture.", isError: true);
+      return null;
+    }
+  } on DioException catch (e) {
+    if (e.response?.statusCode == 400 && e.response?.data is Map<String, dynamic>) {
+      final errorResponse = e.response?.data;
+      if (errorResponse != null && errorResponse.containsKey("errors")) {
+        final fileErrors = errorResponse["errors"]["File"];
+        if (fileErrors is List && fileErrors.isNotEmpty) {
+          showToast(fileErrors.join("\n"), isError: true);
+        } else {
+          showToast("Error uploading image: ${e.message}", isError: true);
+        }
+      } else {
+        showToast("Error uploading image: ${e.message}", isError: true);
+      }
+    } else {
+      showToast("Network error. Please check your connection.", isError: true);
+    }
+    return null;
+  }
+}
+
+
+Future<void> onboardUser() async {
   if (mounted) setState(() => isLoading = true);
+
+  String? uploadedImageUrl;
+
+  if (profileImagePath != null) {
+    uploadedImageUrl = await uploadProfilePicture(File(profileImagePath!));
+    if (uploadedImageUrl == null) {
+      if (mounted) setState(() => isLoading = false);
+      return;
+    }
+  }
 
   const String apiUrl = "customer/User/Onboard";
   final Map<String, dynamic> requestBody = {
@@ -45,7 +92,7 @@ class _DetailsFormScreenState extends State<DetailsFormScreen> {
     "phoneNumber": phoneController.text.trim(),
     "firstName": firstNameController.text.trim(),
     "lastName": lastNameController.text.trim(),
-    "profilePictureUrl": "https://img.freepik.com/free-photo/androgynous-avatar-non-binary-queer-person_23-2151100270.jpg?ga=GA1.1.2007437163.1738254556&semt=ais_hybrid",
+    "profilePictureUrl": uploadedImageUrl ?? "",
   };
 
   try {
@@ -57,7 +104,7 @@ class _DetailsFormScreenState extends State<DetailsFormScreen> {
       await prefs.setString('phoneNumber', phoneController.text.trim());
       await prefs.setString('lastName', lastNameController.text.trim());
       await prefs.setString('firstName', firstNameController.text.trim());
-      await prefs.setString('profilePictureUrl', profileImagePath ?? "");
+      await prefs.setString('profilePictureUrl', uploadedImageUrl ?? "");
 
       showToast("Account created successfully!");
 
@@ -70,23 +117,13 @@ class _DetailsFormScreenState extends State<DetailsFormScreen> {
     } else {
       showToast("Failed to onboard user. Please try again.", isError: true);
     }
-  } on DioException catch (e) {
-    final errorResponse = e.response?.data;
-    if (errorResponse is Map<String, dynamic> && errorResponse.containsKey("errors")) {
-      final errors = errorResponse["errors"] as Map<String, dynamic>;
-      final errorMessage = errors.values
-          .map((e) => e is List ? e.join("\n") : e.toString())
-          .join("\n");
-      showToast(errorMessage, isError: true);
-    } else {
-      showToast("Network error. Please check your connection.", isError: true);
-    }
   } catch (e) {
     showToast("An unexpected error occurred. Please try again.", isError: true);
   }
 
   if (mounted) setState(() => isLoading = false);
 }
+
 
   @override
   Widget build(BuildContext context) {
