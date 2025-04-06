@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
 
-import '../components/send_money_screen.dart';
+import 'send_money.dart';
 import 'buy_data.dart';
+import 'pay_bills.dart';
 import 'notification_screen.dart';
 import 'transaction_history.dart';
 
@@ -246,7 +247,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => SendMoneyScreen(),
+                          builder: (context) => PayBillsScreen(),
                         ),
                       );
                     },
