@@ -23,7 +23,7 @@ class OnboardingSlide extends StatelessWidget {
           height: 300,
           fit: BoxFit.contain,
         ),
-        SizedBox(height: 20),
+        const SizedBox(height: 20),
         // Horizontal Buttons
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -39,8 +39,8 @@ class OnboardingSlide extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 15),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 15),
                     child: Text(
                       "Login",
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -60,8 +60,8 @@ class OnboardingSlide extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 15),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 15),
                     child: Text(
                       "Sign Up",
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),

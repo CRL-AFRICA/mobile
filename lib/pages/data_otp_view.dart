@@ -35,19 +35,19 @@ class _OTPScreenState extends State<OTPScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Column(
         children: [
           const SizedBox(height: 20),
-          Text(
+          const Text(
             "Enter PIN",
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 10),
-          Text(
+          const Text(
             "Enter transaction 4-digit PIN-code or use your biometrics to perform action.",
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.grey, fontSize: 14),
@@ -77,8 +77,8 @@ class _OTPScreenState extends State<OTPScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 50),
               child: GridView.builder(
                 shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
                   mainAxisSpacing: 8,
                   crossAxisSpacing: 8,
@@ -87,7 +87,7 @@ class _OTPScreenState extends State<OTPScreen> {
                 itemCount: 12,
                 itemBuilder: (context, index) {
                   if (index == 9) {
-                    return SizedBox.shrink();
+                    return const SizedBox.shrink();
                   } else if (index == 10) {
                     return _buildKey('0');
                   } else if (index == 11) {
@@ -104,7 +104,7 @@ class _OTPScreenState extends State<OTPScreen> {
             onPressed: () {
               // Handle Forgot Password
             },
-            child: Text(
+            child: const Text(
               "Forget password?",
               style: TextStyle(color: Colors.blue),
             ),
@@ -118,16 +118,16 @@ class _OTPScreenState extends State<OTPScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF6197BC),
+                    backgroundColor: const Color(0xFF6197BC),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    padding: EdgeInsets.symmetric(vertical: 14),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   onPressed: () {
                     // Handle Submit
                   },
-                  child: Text(
+                  child: const Text(
                     "Submit",
                     style: TextStyle(color: Colors.white, fontSize: 16),
                   ),
@@ -143,14 +143,14 @@ class _OTPScreenState extends State<OTPScreen> {
     return GestureDetector(
       onTap: () => _onKeyTap(number),
       child: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           shape: BoxShape.circle,
           color: Colors.transparent,
         ),
         alignment: Alignment.center,
         child: Text(
           number,
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -161,7 +161,7 @@ class _OTPScreenState extends State<OTPScreen> {
       onTap: _onBackspace,
       child: Container(
         alignment: Alignment.center,
-        child: Icon(Icons.backspace, size: 22, color: Colors.grey),
+        child: const Icon(Icons.backspace, size: 22, color: Colors.grey),
       ),
     );
   }

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ImagePickerWidget extends StatefulWidget {
-  final Function(File) onImageSelected; // Callback function
+  final Function(File) onImageSelected;
 
   const ImagePickerWidget({super.key, required this.onImageSelected});
 
@@ -15,18 +15,44 @@ class ImagePickerWidget extends StatefulWidget {
 class _ImagePickerWidgetState extends State<ImagePickerWidget> {
   File? _image;
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.camera);
+    final pickedFile = await picker.pickImage(source: source, imageQuality: 85); // Optional: reduce size
 
     if (pickedFile != null) {
       setState(() {
         _image = File(pickedFile.path);
       });
-
-      // Pass the selected image file to the callback function
       widget.onImageSelected(_image!);
     }
+  }
+
+  void _showImageSourceActionSheet() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Take Photo'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Choose from Gallery'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -34,10 +60,11 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
     return Column(
       children: [
         GestureDetector(
-          onTap: _pickImage,
+          onTap: _showImageSourceActionSheet,
           child: CircleAvatar(
             radius: 50,
             backgroundImage: _image != null ? FileImage(_image!) : null,
+            backgroundColor: Colors.grey.shade300,
             child: _image == null
                 ? const Icon(Icons.camera_alt, size: 40, color: Colors.white)
                 : null,
@@ -45,7 +72,7 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
         ),
         const SizedBox(height: 10),
         TextButton(
-          onPressed: _pickImage,
+          onPressed: _showImageSourceActionSheet,
           child: const Text("Pick Image"),
         ),
       ],

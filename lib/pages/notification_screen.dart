@@ -43,7 +43,7 @@ class NotificationScreen extends StatelessWidget {
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
               decoration: BoxDecoration(
-                color: Color(0xFFEFF3F8), // Adjusted to match the design
+                color: const Color(0xFFEFF3F8), // Adjusted to match the design
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -60,7 +60,7 @@ class NotificationScreen extends StatelessWidget {
                       children: [
                         Text(
                           item["title"]!,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
                             color: Colors.black87,
@@ -85,7 +85,7 @@ class NotificationScreen extends StatelessWidget {
                         style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                       ),
                       const SizedBox(height: 4),
-                      Icon(Icons.check_circle, color: Colors.green, size: 20),
+                      const Icon(Icons.check_circle, color: Colors.green, size: 20),
                     ],
                   ),
                 ],

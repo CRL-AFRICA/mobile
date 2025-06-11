@@ -3,16 +3,13 @@ import 'package:flutter/material.dart';
 import '../components/send_money_screen.dart';
 import '../components/send_to_crs_screen.dart' show SendToCRSScreen;
 
-
 class SendMoneyApp extends StatelessWidget {
   const SendMoneyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: const TransferSelectionScreen(),
-    );
+    // Return the screen directly instead of wrapping with MaterialApp
+    return const TransferSelectionScreen();
   }
 }
 
@@ -24,13 +21,26 @@ class TransferSelectionScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(50.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Select Transfer Method",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  color: Colors.black,
+                  onPressed: () {
+                    Navigator.pop(context); // Will now work correctly
+                  },
+                ),
+                const SizedBox(width: 10),
+                const Text(
+                  "Select Transfer Method",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ],
             ),
             const SizedBox(height: 30),
 
@@ -46,7 +56,7 @@ class TransferSelectionScreen extends StatelessWidget {
               },
               child: _buildTransferOption(
                 icon: Icons.account_balance,
-                title: "To Bank",
+                title: "To Other Bank",
                 color: Colors.blueAccent,
               ),
             ),
@@ -64,7 +74,7 @@ class TransferSelectionScreen extends StatelessWidget {
               },
               child: _buildTransferOption(
                 icon: Icons.credit_card,
-                title: "To CRS",
+                title: "To CRL",
                 color: Colors.green,
               ),
             ),
@@ -74,12 +84,15 @@ class TransferSelectionScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTransferOption({required IconData icon, required String title, required Color color}) {
+  Widget _buildTransferOption({
+    required IconData icon,
+    required String title,
+    required Color color,
+  }) {
     return Container(
       height: 120,
       width: double.infinity,
       decoration: BoxDecoration(
-        // ignore: deprecated_member_use
         color: color.withOpacity(0.2),
         borderRadius: BorderRadius.circular(15),
         border: Border.all(color: color, width: 2),
@@ -89,7 +102,11 @@ class TransferSelectionScreen extends StatelessWidget {
           leading: Icon(icon, size: 40, color: color),
           title: Text(
             title,
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color),
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
           ),
         ),
       ),

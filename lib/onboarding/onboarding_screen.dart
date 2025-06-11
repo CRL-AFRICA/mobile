@@ -24,17 +24,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   void initState() {
     super.initState();
-    Timer.periodic(Duration(seconds: 3), (Timer timer) {
-      if (_currentPage < onboardingData.length - 1) {
-        _currentPage++;
-      } else {
-        _currentPage = 0;
-      }
-      _pageController.animateToPage(
-        _currentPage,
-        duration: Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-      );
+
+    // Ensure that _pageController is properly attached before using it
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Timer.periodic(const Duration(seconds: 3), (Timer timer) {
+        if (!mounted) return;
+
+        if (_pageController.hasClients) {
+          if (_currentPage < onboardingData.length - 1) {
+            _currentPage++;
+          } else {
+            _currentPage = 0;
+          }
+
+          _pageController.animateToPage(
+            _currentPage,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+        }
+      });
     });
   }
 
@@ -76,13 +85,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 _buildButton("Login", Colors.blue, () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => LoginScreen()),
+                    MaterialPageRoute(builder: (context) => const LoginScreen()),
                   );
                 }),
                 _buildButton("Sign Up", Colors.green, () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => DetailsFormScreen()),
+                    MaterialPageRoute(builder: (context) => const DetailsFormScreen()),
                   );
                 }),
               ],
@@ -100,13 +109,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: color,
-            padding: EdgeInsets.symmetric(vertical: 15),
+            padding: const EdgeInsets.symmetric(vertical: 15),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
           onPressed: onPressed,
           child: Text(
             text,
-            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
       ),

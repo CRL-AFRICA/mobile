@@ -1,0 +1,49 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+android {
+    namespace = "com.crs_revamp"
+    compileSdk = 35
+    ndkVersion = flutter.ndkVersion
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    defaultConfig {
+        applicationId = "com.crs_revamp"
+        minSdk = flutter.minSdkVersion
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+
+        manifestPlaceholders = [
+            onesignal_app_id: 'eac8ff53-926c-4bc2-8570-57632d8d9082',
+            onesignal_google_project_number: 'REMOTE',
+            applicationName: "com.crs_revamp.MyApplication"
+        ]
+    }
+
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.debug
+        }
+    }
+}
+
+dependencies {
+    implementation 'com.onesignal:OneSignal:4.8.6'
+    // other dependencies ...
+}
+
+flutter {
+    source = "../.."
+}

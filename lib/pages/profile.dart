@@ -1,9 +1,122 @@
+
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../onboarding/login_screen.dart';
 import 'dashboard.dart';
 import 'transaction_history.dart';
+import 'get_help_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  String bvn = '';
+  String email = '';
+  String username = '';
+  String phoneNumber = ''; // Not available in SharedPreferences
+  String fullName = '';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      loadProfileData();
+    });
+  }
+
+  Future<void> loadProfileData() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    setState(() {
+      bvn = prefs.getString('bvn') ?? '';
+      email = prefs.getString('emailAddress') ?? '';
+      username = prefs.getString('myAccountNumber') ?? '';
+      phoneNumber = prefs.getString('phoneNumber') ?? '';
+      fullName =
+          '${prefs.getString('firstName') ?? ''} ${prefs.getString('lastName') ?? ''}'.trim();
+    });
+  }
+
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('accessToken');
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      (route) => false,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      bottomNavigationBar: BottomNavigationBar(
+        selectedItemColor: const Color(0xFF0066CC),
+        unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
+        currentIndex: 3,
+        onTap: (index) => _onTabTapped(context, index),
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
+          BottomNavigationBarItem(icon: Icon(Icons.help_outline), label: 'Our help'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const SizedBox(height: 50),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                const Text(
+                  'Profile',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF003366),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.power_settings_new, color: Colors.red),
+                  onPressed: _logout,
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            CircleAvatar(
+              radius: 40,
+              backgroundColor: Colors.grey[300],
+              child: Image.asset('images/avatar.png', height: 60),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              fullName,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 32),
+            ProfileItem(label: 'BVN', value: bvn),
+            ProfileItem(label: 'Email Address', value: email),
+            ProfileItem(label: 'Username', value: username),
+            ProfileItem(label: 'Phone Number', value: phoneNumber), // Placeholder for now
+          ],
+        ),
+      ),
+    );
+  }
 
   void _onTabTapped(BuildContext context, int index) {
     if (index == 0) {
@@ -19,88 +132,9 @@ class ProfileScreen extends StatelessWidget {
     } else if (index == 2) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const DashboardScreen()),
+        MaterialPageRoute(builder: (context) => const GetHelpScreen()),
       );
     }
-    // If index == 3 (Profile), stay here
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: const Color(0xFF0066CC),
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        currentIndex: 3,
-        onTap: (index) => _onTabTapped(context, index),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'History',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.help_outline),
-            label: 'Our help',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
-          ),
-        ],
-      ),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Profile',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF003366),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            CircleAvatar(
-              radius: 40,
-              backgroundColor: Colors.grey[300],
-              child: Image.asset('images/avatar.png', height: 60),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Idris Elba',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 32),
-            const ProfileItem(label: 'BVN', value: '149285510'),
-            const ProfileItem(label: 'Email Address', value: 'sdfgergrtg@gmail.com'),
-            const ProfileItem(label: 'Username', value: 'idris12345'),
-            const ProfileItem(label: 'Phone Number', value: '08085453455'),
-          ],
-        ),
-      ),
-    );
   }
 }
 

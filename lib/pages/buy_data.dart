@@ -25,35 +25,35 @@ class _DataInputScreenState extends State<DataInputScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           onChanged: () => setState(() {}),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 "Data",
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: 8),
-              Text("Select your network provider to get instant data."),
-              SizedBox(height: 20),
+              const SizedBox(height: 8),
+              const Text("Select your network provider to get instant data."),
+              const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
+                  const Text(
                     "Recent Beneficiaries",
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
                   ),
                   TextButton(
                     onPressed: () {},
-                    child: Text(
+                    child: const Text(
                       "Find Beneficiary",
                       style: TextStyle(
                         fontSize: 12,
@@ -64,14 +64,14 @@ class _DataInputScreenState extends State<DataInputScreen> {
                   ),
                 ],
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               Container(
-                padding: EdgeInsets.all(15),
+                padding: const EdgeInsets.all(15),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Row(
+                child: const Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Icon(Icons.people, color: Colors.grey),
@@ -85,10 +85,10 @@ class _DataInputScreenState extends State<DataInputScreen> {
                   ],
                 ),
               ),
-              SizedBox(height: 25),
+              const SizedBox(height: 25),
               DropdownButtonFormField<String>(
-                decoration: InputDecoration(border: OutlineInputBorder()),
-                hint: Text("Select network provider"),
+                decoration: const InputDecoration(border: OutlineInputBorder()),
+                hint: const Text("Select network provider"),
                 items:
                     ["MTN", "Airtel", "Glo", "9mobile"].map((String value) {
                       return DropdownMenuItem<String>(
@@ -100,9 +100,9 @@ class _DataInputScreenState extends State<DataInputScreen> {
                 validator:
                     (value) => value == null ? "Select a provider" : null,
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               TextFormField(
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   border: OutlineInputBorder(),
                   hintText: "Phone number",
                 ),
@@ -111,7 +111,7 @@ class _DataInputScreenState extends State<DataInputScreen> {
                 validator:
                     (value) => value!.isEmpty ? "Enter phone number" : null,
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               AmountInputField(
                 onChanged: (value) {
                   setState(() {
@@ -122,11 +122,11 @@ class _DataInputScreenState extends State<DataInputScreen> {
                   });
                 },
               ),
-              Spacer(),
+              const Spacer(),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF6197BC),
-                  minimumSize: Size(double.infinity, 50),
+                  backgroundColor: const Color(0xFF6197BC),
+                  minimumSize: const Size(double.infinity, 50),
                 ),
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
@@ -151,7 +151,7 @@ class _DataInputScreenState extends State<DataInputScreen> {
                     }
                   }
                 },
-                child: Text("Next", style: TextStyle(color: Colors.white)),
+                child: const Text("Next", style: TextStyle(color: Colors.white)),
               ),
             ],
           ),
@@ -180,7 +180,7 @@ class ReviewScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -190,7 +190,7 @@ class ReviewScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 10),
-            Text(
+            const Text(
               "Review",
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
@@ -200,7 +200,7 @@ class ReviewScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
+                const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text("From", style: TextStyle(color: Colors.grey)),
@@ -214,15 +214,15 @@ class ReviewScreen extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text("To", style: TextStyle(color: Colors.grey)),
-                    SizedBox(height: 4),
+                    const Text("To", style: TextStyle(color: Colors.grey)),
+                    const SizedBox(height: 4),
                     Text(
                       provider,
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     Text(
                       phoneNumber,
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
@@ -234,15 +234,15 @@ class ReviewScreen extends StatelessWidget {
             // Amount with Line Representation
             Row(
               children: [
-                Expanded(child: Divider(color: Colors.black, thickness: 2)),
+                const Expanded(child: Divider(color: Colors.black, thickness: 2)),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 10.0),
                   child: Text(
                     "₦$amount",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
-                Expanded(child: Divider(color: Colors.black, thickness: 2)),
+                const Expanded(child: Divider(color: Colors.black, thickness: 2)),
               ],
             ),
 
@@ -251,14 +251,14 @@ class ReviewScreen extends StatelessWidget {
             // Narration Box
             Container(
               width: double.infinity,
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
-                color: Color(0xFFDCEAF5),
+                color: const Color(0xFFDCEAF5),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 "AIRTIME/$provider$phoneNumber",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
               ),
             ),
 
@@ -270,7 +270,7 @@ class ReviewScreen extends StatelessWidget {
               height: 50,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF6197BC),
+                  backgroundColor: const Color(0xFF6197BC),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -279,11 +279,11 @@ class ReviewScreen extends StatelessWidget {
                   // Navigate to OTP Screen
                   Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => OTPScreen()),
+          MaterialPageRoute(builder: (context) => const OTPScreen()),
         );
                   
                 },
-                child: Text(
+                child: const Text(
                   "Send",
                   style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
@@ -303,7 +303,7 @@ class SuccessScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

@@ -20,16 +20,16 @@ class ImagePickerUtil {
           child: Wrap(
             children: [
               ListTile(
-                leading: Icon(Icons.camera),
-                title: Text('Take a photo'),
+                leading: const Icon(Icons.camera),
+                title: const Text('Take a photo'),
                 onTap: () {
                   Navigator.pop(context);
                   _pickImage(context, ImageSource.camera, onImagePicked);
                 },
               ),
               ListTile(
-                leading: Icon(Icons.photo_library),
-                title: Text('Choose from gallery'),
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Choose from gallery'),
                 onTap: () {
                   Navigator.pop(context);
                   _pickImage(context, ImageSource.gallery, onImagePicked);

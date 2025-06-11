@@ -27,7 +27,7 @@ class _LogoLoadingScreenState extends State<LogoLoadingScreen> {
   }
 
   void _startLoadingAnimation() {
-    _timer = Timer.periodic(Duration(seconds: 3), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
       if (_currentIndex < _logoPaths.length - 1) {
         setState(() {
           _currentIndex++;
@@ -42,7 +42,7 @@ class _LogoLoadingScreenState extends State<LogoLoadingScreen> {
   void _navigateToOnboarding() {
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => OnboardingScreen()),
+      MaterialPageRoute(builder: (context) => const OnboardingScreen()),
     );
   }
 
@@ -58,7 +58,7 @@ class _LogoLoadingScreenState extends State<LogoLoadingScreen> {
       backgroundColor: Colors.white,
       body: Center(
         child: AnimatedSwitcher(
-          duration: Duration(milliseconds: 500),
+          duration: const Duration(milliseconds: 500),
           child: Image.asset(
             _logoPaths[_currentIndex], 
             key: ValueKey<int>(_currentIndex), 

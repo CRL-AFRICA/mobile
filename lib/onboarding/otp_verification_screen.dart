@@ -1,7 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:dio/dio.dart';
+import 'package:http/http.dart' as http;
 import '../utils/toast.dart';
 import 'package:pinput/pinput.dart';
 import 'create_password_screen.dart';
@@ -20,7 +21,6 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   int timerSeconds = 240;
   Timer? _timer;
   bool isLoading = false;
-  final Dio _dio = Dio(BaseOptions(baseUrl: "http://20.160.237.234:9080/api/"));
 
   @override
   void initState() {
@@ -37,6 +37,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   }
 
   void _startTimer() {
+    _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (timerSeconds > 0) {
         setState(() {
@@ -56,32 +57,42 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
   Future<void> verifyOtp() async {
     if (otpController.text.length < 6) {
-      showToast("Please enter a valid OTP", isError: true);
+      showToast("Please enter a valid 6-digit OTP", isError: true);
       return;
     }
 
     setState(() => isLoading = true);
     try {
-      final response = await _dio.post("customer/User/VerifyEmail", data: {
-        "emailAddress": userEmail,
-        "otp": otpController.text.trim(),
-      });
-      
+      final url = Uri.parse("https://demoapi.crlafrica.com/api/customer/User/VerifyEmail");
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({
+          "emailAddress": userEmail,
+          "otp": otpController.text.trim(),
+        }),
+      );
+
       if (response.statusCode == 200) {
         showToast("OTP verified successfully!");
         // ignore: use_build_context_synchronously
         Navigator.pushReplacement(
           // ignore: use_build_context_synchronously
           context,
-          MaterialPageRoute(builder: (context) => CreatePasswordScreen()),
+          MaterialPageRoute(builder: (context) => const CreatePasswordScreen()),
         );
+      } else {
+        String errorMessage = "Failed to verify OTP. Status code: ${response.statusCode}";
+        try {
+          final data = json.decode(response.body);
+          if (data is Map && data.containsKey('message')) {
+            errorMessage = data['message'];
+          }
+        } catch (_) {}
+        showToast(errorMessage, isError: true);
       }
-    } on DioException catch (e) {
-      String errorMessage = "An error occurred. Please try again.";
-      if (e.response != null) {
-        errorMessage = e.response?.data['message'] ?? errorMessage;
-      }
-      showToast(errorMessage, isError: true);
+    } catch (e) {
+      showToast("An error occurred: $e", isError: true);
     } finally {
       setState(() => isLoading = false);
     }
@@ -95,17 +106,24 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
     setState(() => timerSeconds = 240);
     _startTimer();
-    
+
     try {
-      final response = await _dio.post("customer/User/ResendVerifyEmail", data: {
-        "emailAddress": userEmail,
-      });
-      
+      final url = Uri.parse("http://20.160.237.234:9080/api/customer/User/ResendVerifyEmail");
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({
+          "emailAddress": userEmail,
+        }),
+      );
+
       if (response.statusCode == 200) {
         showToast("New OTP sent to your email.");
+      } else {
+        showToast("Failed to resend OTP. Status code: ${response.statusCode}", isError: true);
       }
-    } on DioException catch (e) {
-      showToast(e.response?.data['message'] ?? "Failed to resend OTP", isError: true);
+    } catch (e) {
+      showToast("An error occurred: $e", isError: true);
     }
   }
 
@@ -136,7 +154,11 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
             const SizedBox(height: 10),
             const Text("Enter OTP", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 5),
-            const Text("Please enter the one-time password sent to your email", textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: Colors.grey)),
+            const Text(
+              "Please enter the one-time password sent to your email",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
             const SizedBox(height: 10),
             Text("This code will expire in ${_formatTime(timerSeconds)}", style: const TextStyle(fontSize: 14, color: Colors.red)),
             const SizedBox(height: 20),
@@ -173,7 +195,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 minimumSize: const Size(double.infinity, 50),
               ),
-              child: isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text("Continue", style: TextStyle(fontSize: 16, color: Colors.white)),
+              child: isLoading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text("Continue", style: TextStyle(fontSize: 16, color: Colors.white)),
             ),
           ],
         ),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'forgot_pin_security_questions_screen.dart';
+
 
 
 class TvNetworkScreen extends StatefulWidget {
@@ -15,7 +17,7 @@ class _TvNetworkScreenState extends State<TvNetworkScreen> {
   String selectedProvider = 'DSTV';
 
   Widget buildHistoryItem(String logoPath, String decoderNumber) {
-  return Container(
+  return Container( 
     width: 70,
     margin: const EdgeInsets.only(right: 12),
     child: Column(
@@ -84,7 +86,6 @@ class _TvNetworkScreenState extends State<TvNetworkScreen> {
         ),
       ),
       const SizedBox(height: 20),
-          children: [
             const Text('Service Provider'),
             GestureDetector(
               onTap: _openProviderDrawer,
@@ -132,7 +133,7 @@ class _TvNetworkScreenState extends State<TvNetworkScreen> {
                     context,
                     MaterialPageRoute(builder: (_) => const CablePreviewScreen()),
                   );
-                },
+                }, 
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF3478F6),
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -245,23 +246,148 @@ class CablePreviewScreen extends StatelessWidget {
   }
 }
 
-class OtpScreen extends StatelessWidget {
+class OtpScreen extends StatefulWidget {
   const OtpScreen({super.key});
+
+  @override
+  State<OtpScreen> createState() => _OtpScreenState();
+}
+
+class _OtpScreenState extends State<OtpScreen> {
+  String pin = '';
+
+  void _addDigit(String digit) {
+    if (pin.length < 4) {
+      setState(() {
+        pin += digit;
+      });
+    }
+  }
+
+  void _deleteDigit() {
+    if (pin.isNotEmpty) {
+      setState(() {
+        pin = pin.substring(0, pin.length - 1);
+      });
+    }
+  }
+
+  Widget _buildPinDots() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(4, (index) {
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: index < pin.length ? Colors.black : Colors.grey.shade300,
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _buildKeypadButton(String label, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap ?? () => _addDigit(label),
+      child: Container(
+        alignment: Alignment.center,
+        height: 75,
+        child: Text(
+          label,
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
+        ),
+      ),
+    );
+  }
+
+  void _submitPin() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const SuccessScreen()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Enter OTP'),
-      ),
-      body: Center(
-        child: ElevatedButton(
-          child: const Text('Confirm'),
-          onPressed: () => Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const SuccessScreen()),
-          ),
+        title: const Text(''),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
         ),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        foregroundColor: Colors.black,
+      ),
+      body: Column(
+        children: [
+          const SizedBox(height: 20),
+          const Text(
+            'Enter PIN',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Enter transaction 4-digit PIN-code or use your biometrics\nto perform action.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey),
+          ),
+          const SizedBox(height: 40),
+          _buildPinDots(),
+          const SizedBox(height: 30),
+          Expanded(
+            child: GridView.count(
+              padding: const EdgeInsets.symmetric(horizontal: 60),
+              crossAxisCount: 3,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              children: [
+                ...List.generate(9, (index) {
+                  final digit = (index + 1).toString();
+                  return _buildKeypadButton(digit);
+                }),
+                _buildKeypadButton('', onTap: () {}),
+                _buildKeypadButton('0'),
+                _buildKeypadButton('⌫', onTap: _deleteDigit),
+              ],
+            ),
+          ),
+          if (pin.length == 4)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 20.0),
+              child: ElevatedButton(
+                onPressed: _submitPin,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Submit',
+                  style: TextStyle(fontSize: 16),
+                ),
+              ),
+            ),
+          TextButton(
+            onPressed: () {
+               Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ForgotPinScreen()),
+        );
+            },
+            child: const Text(
+              'Forgot Pin?',
+              style: TextStyle(color: Colors.blue),
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
       ),
     );
   }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../components/electrical_screen.dart';
-import '../components/tv_network_screen.dart';
+import '../components/tv_nework_screen.dart';
 
 
 
@@ -77,11 +77,11 @@ class BillCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: const Color(0xFFF0F6FC),
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
               color: Colors.black12,
               blurRadius: 4,
-              offset: const Offset(0, 2),
+              offset: Offset(0, 2),
             ),
           ],
         ),

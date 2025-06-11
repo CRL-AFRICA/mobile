@@ -20,7 +20,7 @@ class _OTPInputWidgetState extends State<OTPInputWidget> {
       maxLength: 6,
       keyboardType: TextInputType.number,
       textAlign: TextAlign.center,
-      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
       decoration: InputDecoration(
         counterText: "",
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
