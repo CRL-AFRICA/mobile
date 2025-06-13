@@ -1,6 +1,8 @@
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:lottie/lottie.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:http/http.dart' as http;
@@ -8,7 +10,10 @@ import 'package:printing/printing.dart';
 // import 'package:open_file/open_file.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import '../pages/dashboard.dart';
 import '../utils/toast.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'forgot_pin_security_questions_screen.dart' show ForgotPinScreen;
 
 void main() {
@@ -174,7 +179,6 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
-
         final totalFees = decoded["totalFees"]?.toString() ?? "0.00";
 
         setState(() {
@@ -202,6 +206,7 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -213,7 +218,7 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
           },
         ),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -367,7 +372,7 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
               ),
               onChanged: (_) => setState(() {}),
             ),
-            const Spacer(),
+            const SizedBox(height: 25),
             if (isFormFilled)
               SizedBox(
                 width: double.infinity,
@@ -394,6 +399,8 @@ class _SendMoneyScreenState extends State<SendMoneyScreen> {
                   child: const Text("Continue", style: TextStyle(fontSize: 18)),
                 ),
               ),
+            const SizedBox(
+                height: 40), // Extra space at the bottom for keyboard
           ],
         ),
       ),
@@ -824,78 +831,82 @@ class SuccessScreen extends StatelessWidget {
     required this.sourceAccountNumber,
   });
 
-  Future<void> generateReceiptPdf() async {
+  Future<void> generateReceiptPdf({
+    bool download = true,
+    bool asImage = false,
+  }) async {
     final pdf = pw.Document();
-    final logo = pw.MemoryImage(
-      (await rootBundle.load('images/logo.png')).buffer.asUint8List(),
-    );
-
     final transactionDate = DateTime.now();
     final parsedAmount = double.tryParse(amount) ?? 0.0;
+
+    pw.MemoryImage? logoImage;
+    try {
+      final logoBytes =
+          (await rootBundle.load('images/logo.png')).buffer.asUint8List();
+      logoImage = pw.MemoryImage(logoBytes);
+    } catch (_) {}
 
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
         build: (context) => pw.Container(
           padding: const pw.EdgeInsets.all(20),
-          color: PdfColor.fromHex("#F5F7FA"),
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              pw.Center(child: pw.Image(logo, height: 60)),
+              if (logoImage != null)
+                pw.Center(child: pw.Image(logoImage, height: 60)),
               pw.SizedBox(height: 20),
               pw.Center(
-                child: pw.Text(
-                  'Receipt',
-                  style: pw.TextStyle(
-                    fontSize: 24,
-                    fontWeight: pw.FontWeight.bold,
-                    color: PdfColor.fromHex("#002B5C"), // Dark Blue
-                  ),
-                ),
+                child: pw.Text('Receipt',
+                    style: pw.TextStyle(
+                        fontSize: 24, fontWeight: pw.FontWeight.bold)),
               ),
               pw.SizedBox(height: 30),
-              pw.Text("Transfer",
-                  style: pw.TextStyle(
-                      fontSize: 18, fontWeight: pw.FontWeight.bold)),
-              pw.SizedBox(height: 10),
               _buildRow("Transfer ID", transactionReference),
-              _buildRow("Transaction date",
+              _buildRow("Date",
                   "${transactionDate.day}-${_monthName(transactionDate.month)}-${transactionDate.year}"),
-              _buildRow("Sender's Name", sourceAccountName),
+              _buildRow("Sender", sourceAccountName),
               _buildRow("Source",
                   "xxxxx${sourceAccountNumber.substring(sourceAccountNumber.length - 4)}"),
-              _buildRow("Destination Name", accountName),
+              _buildRow("Receiver", accountName),
               _buildRow("Destination", accountNumber),
+              _buildRow("Bank", bankName),
               _buildRow("Amount", "₦${parsedAmount.toStringAsFixed(2)}"),
-              _buildRow("Receiver’s Bank", bankName),
-              _buildRow("Reason", narration),
-              pw.Spacer(),
-              pw.Divider(),
-              pw.Center(
-                child: pw.Text(
-                  'Thank you for banking with us',
-                  style: pw.TextStyle(
-                      fontSize: 12, color: PdfColor.fromHex("#888")),
-                ),
-              ),
+              _buildRow("Narration", narration),
             ],
           ),
         ),
       ),
     );
 
-    await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => pdf.save());
+    final bytes = await pdf.save();
+    final directory = await getTemporaryDirectory();
+
+    if (download) {
+      final file = File('${directory.path}/receipt.pdf');
+      await file.writeAsBytes(bytes);
+      await Share.shareXFiles([XFile(file.path)], text: "Transaction Receipt");
+    } else if (asImage) {
+      final raster = await Printing.raster(bytes, dpi: 300);
+      final imageList = await raster.toList(); // Converts stream to list
+      if (imageList.isNotEmpty) {
+        final png = await imageList.first.toPng();
+        final file = File('${directory.path}/receipt.png');
+        await file.writeAsBytes(png);
+        await Share.shareXFiles([XFile(file.path)],
+            text: "Transaction Receipt (Image)");
+      }
+    }
   }
 
-  pw.Widget _buildRow(String title, String value) {
+  pw.Widget _buildRow(String label, String value) {
     return pw.Padding(
       padding: const pw.EdgeInsets.symmetric(vertical: 4),
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(title, style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+          pw.Text(label, style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
           pw.Text(value),
         ],
       ),
@@ -924,11 +935,58 @@ class SuccessScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Transaction Successful')),
-      body: Center(
-        child: ElevatedButton.icon(
-          onPressed: generateReceiptPdf,
-          icon: const Icon(Icons.picture_as_pdf),
-          label: const Text("Download Receipt"),
+      body: SingleChildScrollView(
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height - kToolbarHeight,
+          width: double.infinity,
+          child: Center(
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Lottie.asset('images/success.json',
+                      height: 140, repeat: false),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Transaction was successful!',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () async =>
+                            await generateReceiptPdf(download: true),
+                        icon: const Icon(Icons.download),
+                        label: const Text("Download PDF"),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: () async => await generateReceiptPdf(
+                            download: false, asImage: true),
+                        icon: const Icon(Icons.image),
+                        label: const Text("Image"),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 22),
+                  ElevatedButton.icon(
+                    onPressed: () async => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => DashboardScreen())),
+                    icon: const Icon(Icons.home),
+                    label: const Text("Back to dashboard"),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:crs_revamp/widgets/custom_text_field.dart';
 import 'package:flutter/material.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import '../pages/dashboard.dart';
@@ -16,6 +17,7 @@ class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _LoginScreenState createState() => _LoginScreenState();
 }
 
@@ -26,33 +28,39 @@ class _LoginScreenState extends State<LoginScreen> {
 
   String? userEmail;
   String? firstName;
+  bool useBiometrics = false;
+  bool isLoading = false;
   int timerSeconds = 240;
   Timer? _timer;
-  bool isLoading = false;
 
   final String baseUrl = "https://demoapi.crlafrica.com/api/";
 
   @override
   void initState() {
     super.initState();
-    _loadUserEmail();
+    _loadUserSettings();
     _startTimer();
   }
 
-  Future<void> _loadUserEmail() async {
+  Future<void> _loadUserSettings() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (!mounted) return;
 
     final savedEmail = prefs.getString('userEmail');
     final savedFirstName = prefs.getString('firstName');
+    final biometricsEnabled = prefs.getBool('biometricsEnabled') ?? false;
 
+    if (!mounted) return;
     setState(() {
       userEmail = savedEmail;
       firstName = savedFirstName ?? "";
+      useBiometrics = biometricsEnabled;
+
       if (userEmail != null && userEmail!.isNotEmpty) {
         emailController.text = userEmail!;
       }
     });
+
+    print("Biometrics enabled: $biometricsEnabled");
   }
 
   void _startTimer() {
@@ -69,73 +77,128 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
-  Future<void> loginUser() async {
-    if (mounted) setState(() => isLoading = true);
+  Future<void> loginUser({
+  String? overrideEmail,
+  String? overridePassword,
+  bool redirect = true, // ✅ new flag
+}) async {
+  if (mounted) setState(() => isLoading = true);
 
-    final url = Uri.parse("${baseUrl}customer/User/SignIn");
-    final Map<String, dynamic> requestBody = {
-      "emailAddress": emailController.text.trim(),
-      "password": passwordController.text.trim(),
-    };
+  final emailToUse = overrideEmail ?? emailController.text.trim();
+  final passwordToUse = overridePassword ?? passwordController.text.trim();
 
-    try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(requestBody),
-      );
+  final url = Uri.parse("${baseUrl}customer/User/SignIn");
+  final Map<String, dynamic> requestBody = {
+    "emailAddress": emailToUse,
+    "password": passwordToUse,
+  };
 
-      if (!mounted) return;
+  try {
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(requestBody),
+    );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final String accessToken = data["accessToken"];
-        final String fetchedFirstName = data["firstName"];
+    if (!mounted) return;
 
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setString("accessToken", accessToken);
-        await prefs.setString("firstName", fetchedFirstName);
-        await prefs.setString("userEmail", emailController.text.trim());
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final String accessToken = data["accessToken"];
+      final String fetchedFirstName = data["firstName"];
+      final String fetchedPhoneNumber = data["phoneNumber"];
+      final String fetchedUserId = data["userId"];
 
-        showToast("Login successful!");
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString("accessToken", accessToken);
+      await prefs.setString("firstName", fetchedFirstName);
+      await prefs.setString("phoneNumber", fetchedPhoneNumber);
+      await prefs.setString("userId", fetchedUserId);
+      await prefs.setString("userEmail", emailToUse);
 
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const DashboardScreen()),
-          );
-        }
-      } else {
-        final body = jsonDecode(response.body);
-
-        if (body is Map && body.containsKey("errors")) {
-          final errors = body["errors"];
-          final emailErrors = errors["EmailAddress"];
-
-          if (emailErrors is List && emailErrors.isNotEmpty) {
-            final errorMessage = emailErrors.join("\n");
-            if (mounted) showToast(errorMessage, isError: true);
-          } else {
-            if (mounted) showToast("Invalid email or password", isError: true);
-          }
-        } else {
-          final message = body['message'] ?? "Login failed. Please try again.";
-          if (mounted) showToast(message, isError: true);
-        }
+      if (useBiometrics && passwordToUse.isNotEmpty) {
+        await prefs.setString("biometricPassword", passwordToUse);
       }
-    } catch (e, stacktrace) {
-      print("Exception during login: $e");
-      print("Stacktrace:\n$stacktrace");
-      if (mounted) {
-        showToast(
-          "An unexpected error occurred. Please try again.",
-          isError: true,
+
+      if (fetchedUserId.isNotEmpty) {
+        await OneSignal.login(fetchedUserId);
+      }
+
+      showToast("Login successful!");
+
+      if (redirect && mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DashboardScreen()),
         );
       }
-    }
+    } else {
+      final body = jsonDecode(response.body);
 
-    if (mounted) setState(() => isLoading = false);
+      if (body is Map && body.containsKey("errors")) {
+        final errors = body["errors"];
+        final emailErrors = errors["EmailAddress"];
+
+        if (emailErrors is List && emailErrors.isNotEmpty) {
+          final errorMessage = emailErrors.join("\n");
+          if (mounted) showToast(errorMessage, isError: true);
+        } else {
+          if (mounted) showToast("Invalid email or password", isError: true);
+        }
+      } else {
+        final message = body['message'] ?? "Login failed. Please try again.";
+        if (mounted) showToast(message, isError: true);
+      }
+    }
+  } catch (e, stacktrace) {
+    print("Exception during login: $e");
+    print("Stacktrace:\n$stacktrace");
+    if (mounted) {
+      showToast("An unexpected error occurred. Please try again.", isError: true);
+    }
   }
+
+  if (mounted) setState(() => isLoading = false);
+}
+
+
+  Future<void> _authenticateWithBiometrics() async {
+  final isAvailable = await auth.canCheckBiometrics;
+  final isDeviceSupported = await auth.isDeviceSupported();
+
+  if (!isAvailable || !isDeviceSupported || !useBiometrics) {
+    showToast("Biometric authentication not available.", isError: true);
+    return;
+  }
+
+  try {
+    final authenticated = await auth.authenticate(
+      localizedReason: "Authenticate with fingerprint",
+      options: const AuthenticationOptions(biometricOnly: true),
+    );
+
+    if (authenticated) {
+      final prefs = await SharedPreferences.getInstance();
+      final savedPassword = prefs.getString("biometricPassword");
+
+      if (userEmail != null && userEmail!.isNotEmpty && savedPassword != null) {
+        await loginUser(
+          overrideEmail: userEmail,
+          overridePassword: savedPassword,
+          redirect: true, // ✅ force redirect to dashboard after biometric login
+        );
+      } else {
+        showToast("Stored credentials not found.", isError: true);
+      }
+    } else {
+      showToast("Biometric authentication failed.", isError: true);
+    }
+  } catch (e) {
+    print("Biometric error: $e");
+    showToast("Authentication error. Try again.", isError: true);
+  }
+}
+
 
   @override
   void dispose() {
@@ -151,11 +214,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 50),
+      body: SafeArea(
+        child: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -174,89 +237,102 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 60),
+                CustomTextField(
+                  controller: emailController,
+                  hintText: "Enter your Email address",
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 20),
+                CustomPasswordTextField(
+                  controller: passwordController,
+                  labelText: "Enter password",
+                ),
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const ForgotPasswordScreen()),
+                      );
+                    },
+                    child: const Text(
+                      "Forgot Password?",
+                      style: TextStyle(decoration: TextDecoration.underline),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 30),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: isLoading ? null : loginUser,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: isLoading
+                        ? const SpinKitThreeBounce(
+                            color: Colors.white,
+                            size: 18,
+                          )
+                        : const Text(
+                            "Login  →",
+                            style: TextStyle(fontSize: 16, color: Colors.white),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                if (useBiometrics)
+                  Center(
+                    child: GestureDetector(
+                      onTap: _authenticateWithBiometrics,
+                      child: Column(
+                        children: [
+                          Image.asset(
+                            "images/fingerprint.png",
+                            height: 50,
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            "Login with Fingerprint",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: primaryColor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 20),
+                Center(
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const DetailsFormScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      "Create an account? Sign up",
+                      style: TextStyle(color: primaryColor, fontSize: 14),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-          const SizedBox(height: 70),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: CustomTextField(
-              controller: emailController,
-              hintText: "Enter your Email address",
-              keyboardType: TextInputType.emailAddress,
-            ),
-          ),
-          const SizedBox(height: 20),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: CustomPasswordTextField(
-              controller: passwordController,
-              labelText: "Enter new password",
-            ),
-          ),
-          const SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
-                  );
-                },
-                child: const Text(
-                  "Forgot Password?",
-                  style: TextStyle(decoration: TextDecoration.underline),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 30),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: isLoading ? null : loginUser,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: isLoading
-                    ? const SpinKitThreeBounce(
-                        color: Colors.white,
-                        size: 18,
-                      )
-                    : const Text(
-                        "Login  →",
-                        style: TextStyle(fontSize: 16, color: Colors.white),
-                      ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Center(
-            child: TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const DetailsFormScreen(),
-                  ),
-                );
-              },
-              child: const Text(
-                "Create an account? Sign up",
-                style: TextStyle(color: primaryColor, fontSize: 14),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

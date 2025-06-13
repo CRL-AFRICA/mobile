@@ -1,8 +1,14 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:pdf/widgets.dart' as pw;
+import 'package:pdf/pdf.dart';
+import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Transaction {
@@ -71,7 +77,8 @@ class TransactionHistoryScreen extends StatefulWidget {
   const TransactionHistoryScreen({super.key});
 
   @override
-  State<TransactionHistoryScreen> createState() => _TransactionHistoryScreenState();
+  State<TransactionHistoryScreen> createState() =>
+      _TransactionHistoryScreenState();
 }
 
 class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
@@ -93,7 +100,8 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
       return;
     }
 
-    final url = Uri.parse('https://demoapi.crlafrica.com/odata/customer/TransactionHistory');
+    final url = Uri.parse(
+        'https://demoapi.crlafrica.com/odata/customer/TransactionHistory');
 
     try {
       final response = await http.get(
@@ -113,7 +121,8 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
           isLoading = false;
         });
       } else {
-        print("Failed to load transactions. Status code: ${response.statusCode}");
+        print(
+            "Failed to load transactions. Status code: ${response.statusCode}");
         setState(() => isLoading = false);
       }
     } catch (e) {
@@ -137,12 +146,14 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                     return ListTile(
                       title: Text(transaction.beneficiaryAccountName),
                       subtitle: Text(transaction.transactionRef),
-                      trailing: Text("₦${transaction.amount.toStringAsFixed(2)}"),
+                      trailing:
+                          Text("₦${transaction.amount.toStringAsFixed(2)}"),
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => TransactionReceiptScreen(transaction: transaction),
+                            builder: (context) => TransactionReceiptScreen(
+                                transaction: transaction),
                           ),
                         );
                       },
@@ -171,21 +182,72 @@ class TransactionReceiptScreen extends StatelessWidget {
     );
   }
 
-  void _shareReceipt() {
-    final receipt = '''
-Transaction Receipt
+ Future<void> _generateAndSharePDF(BuildContext context) async {
+  final pdf = pw.Document();
 
-Transaction ID: ${transaction.id}
-Reference: ${transaction.transactionRef}
-Beneficiary: ${transaction.beneficiaryAccountName} (${transaction.beneficiaryAccountNumber})
-Source Bank: ${transaction.sourceBankName}
-Beneficiary Bank: ${transaction.beneficiaryBankName} (${transaction.beneficiaryBankCode})
-Amount: ₦${transaction.amount.toStringAsFixed(2)}
-Fee: ₦${transaction.feeAmount.toStringAsFixed(2)}
-VAT: ₦${transaction.vatAmount.toStringAsFixed(2)}
-Remarks: ${transaction.remarks}
-''';
-    Share.share(receipt, subject: 'Transaction Receipt');
+  // Load logo
+  pw.MemoryImage? logoImage;
+  try {
+    final logoBytes = (await rootBundle.load('images/logo.png')).buffer.asUint8List();
+    logoImage = pw.MemoryImage(logoBytes);
+  } catch (e) {
+    debugPrint("Failed to load logo: $e");
+  }
+
+  pdf.addPage(
+    pw.Page(
+      build: (pw.Context context) => pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          if (logoImage != null)
+            pw.Center(child: pw.Image(logoImage, height: 80)), // Logo
+          pw.SizedBox(height: 20),
+          pw.Text("Transaction Receipt", style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 20),
+          _pdfRow("Transaction ID", transaction.id),
+          _pdfRow("Reference", transaction.transactionRef),
+          _pdfRow("Beneficiary Name", transaction.beneficiaryAccountName),
+          _pdfRow("Beneficiary Account", transaction.beneficiaryAccountNumber),
+          _pdfRow("Source Bank", transaction.sourceBankName),
+          _pdfRow("Beneficiary Bank", transaction.beneficiaryBankName),
+          _pdfRow("Bank Code", transaction.beneficiaryBankCode),
+          _pdfRow("Amount", "₦${transaction.amount.toStringAsFixed(2)}"),
+          _pdfRow("Fee", "₦${transaction.feeAmount.toStringAsFixed(2)}"),
+          _pdfRow("VAT", "₦${transaction.vatAmount.toStringAsFixed(2)}"),
+          _pdfRow("Remarks", transaction.remarks),
+        ],
+      ),
+    ),
+  );
+
+  try {
+    final outputDir = await getTemporaryDirectory();
+    final filePath = "${outputDir.path}/transaction_receipt_${transaction.id}.pdf";
+    final file = File(filePath);
+
+    await file.writeAsBytes(await pdf.save());
+
+    await Share.shareXFiles(
+      [XFile(file.path)],
+      text: 'Transaction Receipt - ${transaction.transactionRef}',
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to share PDF: $e')));
+  }
+}
+
+
+  pw.Widget _pdfRow(String label, String value) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 4),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(label, style: const pw.TextStyle(color: PdfColors.grey)),
+          pw.Text(value, style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+        ],
+      ),
+    );
   }
 
   @override
@@ -207,11 +269,12 @@ Remarks: ${transaction.remarks}
             _receiptRow("Amount", "₦${transaction.amount.toStringAsFixed(2)}"),
             _receiptRow("Fee", "₦${transaction.feeAmount.toStringAsFixed(2)}"),
             _receiptRow("VAT", "₦${transaction.vatAmount.toStringAsFixed(2)}"),
+            _receiptRow("Remarks", transaction.remarks),
             const SizedBox(height: 20),
             ElevatedButton.icon(
-              onPressed: _shareReceipt,
-              icon: const Icon(Icons.share),
-              label: const Text("Share Receipt"),
+              onPressed: () => _generateAndSharePDF(context),
+              icon: const Icon(Icons.picture_as_pdf),
+              label: const Text("Share PDF Receipt"),
             ),
           ],
         ),

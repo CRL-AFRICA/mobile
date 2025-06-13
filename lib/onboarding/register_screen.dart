@@ -276,7 +276,7 @@ Future<void> onboardUser() async {
             ElevatedButton(
               onPressed: isLoading ? null : onboardUser,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
+                backgroundColor: Color(0xFF6197BC),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),

@@ -5,7 +5,7 @@
 	<key>NSUserTrackingUsageDescription</key>
 <string>This identifier will be used to deliver personalized ads to you.</string>
 <key>NSFaceIDUsageDescription</key>
-<string>Why is my app authenticating using face id?</string>
+<string>This app uses Face ID to authenticate</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

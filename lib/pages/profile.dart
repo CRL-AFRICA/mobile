@@ -1,7 +1,9 @@
 
 import 'package:flutter/material.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../onboarding/login_screen.dart';
+import '../onboarding/settings_screen.dart';
 import 'dashboard.dart';
 import 'transaction_history.dart';
 import 'get_help_screen.dart';
@@ -44,6 +46,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('accessToken');
+    await OneSignal.logout();
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
@@ -90,9 +93,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     color: Color(0xFF003366),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.power_settings_new, color: Colors.red),
-                  onPressed: _logout,
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.settings, color: Colors.grey),
+                      onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen()));
+                    },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.power_settings_new, color: Colors.red),
+                      onPressed: _logout,
+                    ),
+                  ],
                 ),
               ],
             ),

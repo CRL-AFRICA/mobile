@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:lottie/lottie.dart';
 import '../utils/toast.dart';
 import 'login_screen.dart'; // Replace with your actual login screen import
 
@@ -288,7 +289,7 @@ class ResetSuccessScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.check_circle, size: 100, color: Colors.green),
+              Lottie.asset('images/success.json', height: 140, repeat: false),
               const SizedBox(height: 20),
               const Text("Password Reset Successful", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),

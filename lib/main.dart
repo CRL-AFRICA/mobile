@@ -23,22 +23,38 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   HttpOverrides.global = MyHttpOverrides();
 
-  // ✅ Correct OneSignal initialization (returns void, so NO await)
-  OneSignal.initialize("eac8ff53-926c-4bc2-8570-57632d8d9082");
+  SharedPreferences prefs = await SharedPreferences.getInstance();
 
-  // ✅ Permission request (optional, recommended on iOS)
+  // ✅ Get saved user values
+  String? userId = prefs.getString('userId');
+  String? phoneNumber = prefs.getString('phoneNumber');
+  String? userEmail = prefs.getString('userEmail');
+
+  // ✅ Initialize OneSignal
+  OneSignal.initialize("eac8ff53-926c-4bc2-8570-57632d8d9082");
   await OneSignal.Notifications.requestPermission(true);
 
-  // ✅ Foreground notification handler
+  // ✅ Set OneSignal External ID
+  if (userId != null && userId.isNotEmpty) {
+    await OneSignal.login(userId);
+  }
+
+  // ✅ Send tags (email and phone) to OneSignal
+  Map<String, String> tags = {};
+  if (userEmail != null && userEmail.isNotEmpty) tags['email'] = userEmail;
+  if (phoneNumber != null && phoneNumber.isNotEmpty) tags['phone'] = phoneNumber;
+
+  if (tags.isNotEmpty) {
+    await OneSignal.User.addTags(tags);
+  }
+
+  // ✅ Notification handlers
   OneSignal.Notifications.addForegroundWillDisplayListener((event) {
-    // ✅ Correct: use `event.notification.display();`
     event.notification.display();
   });
 
-  // ✅ Notification click handler
   OneSignal.Notifications.addClickListener((event) {
     final data = event.notification.additionalData;
     final screen = data?['screen'];
@@ -103,22 +119,24 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   Future<void> _loadInitialScreen() async {
-    try {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? userEmail = prefs.getString('userEmail');
+  try {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userEmail = prefs.getString('userEmail');
 
-      setState(() {
-        _initialScreen = (userEmail!.isNotEmpty)
-            ? const LoginScreen()
-            : const LogoLoadingScreen();
-      });
-    } catch (e) {
-      setState(() {
+    setState(() {
+      if (userEmail == null || userEmail.isEmpty) {
+        _initialScreen = const LogoLoadingScreen();
+      } else {
         _initialScreen = const LoginScreen();
-      });
-      debugPrint("Error loading user data: $e");
-    }
+      }
+    });
+  } catch (e) {
+    setState(() {
+      _initialScreen = const LogoLoadingScreen();
+    });
+    debugPrint("Error loading user data: $e");
   }
+}
 
   @override
   Widget build(BuildContext context) {

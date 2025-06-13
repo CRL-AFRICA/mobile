@@ -20,7 +20,7 @@ android {
 
     defaultConfig {
         applicationId = "com.crs_revamp"
-        minSdk = flutter.minSdkVersion
+        minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -41,6 +41,8 @@ android {
 
 dependencies {
     implementation 'com.onesignal:OneSignal:4.8.6'
+    implementation "androidx.biometric:biometric:1.1.0"
+
     // other dependencies ...
 }
 
